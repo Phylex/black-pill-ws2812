@@ -1,14 +1,14 @@
-PROJECT = awesomesauce
+PROJECT = blink-test
 BUILD_DIR = bin
 
-SHARED_DIR = ../my-common-code
-CFILES = my-project.c
+SHARED_DIR = ../common
+CFILES = blink-test.c
 CFILES += api.c
 AFILES += api-asm.S
 
 # TODO - you will need to edit these two lines!
-DEVICE=stm32f407vgt6
-OOCD_FILE = board/stm32f4discovery.cfg
+DEVICE=stm32f411CEU6
+OOCD_FILE =
 
 # You shouldn't have to edit anything below here.
 VPATH += $(SHARED_DIR)
