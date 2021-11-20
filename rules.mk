@@ -19,10 +19,10 @@
 # OPT - full -O flag, defaults to -Os
 # CSTD - defaults -std=c99
 # CXXSTD - no default.
-# OOCD_INTERFACE - eg stlink-v2
-# OOCD_TARGET - eg stm32f4x
+OOCD_INTERFACE = stlink
+OOCD_TARGET = stm32f4x
 #    both only used if you use the "make flash" target.
-# OOCD_FILE - eg my.openocd.cfg
+# OOCD_FILE = my.openocd.cfg
 #    This overrides interface/target above, and is used as just -f FILE
 ### TODO/FIXME/notes ###
 # No support for stylecheck.
@@ -154,24 +154,23 @@ $(PROJECT).elf: $(OBJS) $(LDSCRIPT) $(LIBDEPS)
 %.list: %.elf
 	$(OBJDUMP) -S $< > $@
 
-#%.flash: %.elf
-#	@printf "  FLASH\t$<\n"
-#ifeq (,$(OOCD_FILE))
-#	$(Q)(echo "halt; program $(realpath $(*).elf) verify reset" | nc -4 localhost 4444 2>/dev/null) || \
-#		$(OOCD) -f interface/$(OOCD_INTERFACE).cfg \
-#		-f target/$(OOCD_TARGET).cfg \
-#		-c "program $(realpath $(*).elf) verify reset exit" \
-#		$(NULL)
-#else
-#	$(Q)(echo "halt; program $(realpath $(*).elf) verify reset" | nc -4 localhost 4444 2>/dev/null) || \
-#		$(OOCD) -f $(OOCD_FILE) \
-#		-c "program $(realpath $(*).elf) verify reset exit" \
-#		$(NULL)
-#endif
+%.flash: %.elf
+	@printf "  FLASH\t$<\n"
+ifeq (,$(OOCD_FILE))
+	$(Q)(echo "halt; program $(realpath $(*).elf) verify reset" | nc -4 localhost 4444 2>/dev/null) || \
+		$(OOCD) -f interface/$(OOCD_INTERFACE).cfg \
+		-f target/$(OOCD_TARGET).cfg \
+		-c "program $(realpath $(*).elf) verify reset exit" \
+		$(NULL)
+else
+	$(Q)(echo "halt; program $(realpath $(*).elf) verify reset" | nc -4 localhost 4444 2>/dev/null) || \
+		$(OOCD) -f $(OOCD_FILE) \
+		-c "program $(realpath $(*).elf) verify reset exit" \
+		$(NULL)
+endif
 
 clean:
 	rm -rf $(BUILD_DIR) $(GENERATED_BINS)
 
 .PHONY: all clean
 -include $(OBJS:.o=.d)
-
