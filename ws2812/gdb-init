@@ -1,0 +1,3 @@
+tar ext /dev/ttyBmpGdb
+mon tpwr enable
+mon swdp_scan
