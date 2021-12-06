@@ -13,6 +13,7 @@
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/timer.h>
+#include <math.h>
 
 #ifndef ARRAY_LEN
 #define ARRAY_LEN(array) (sizeof((array))/sizeof((array)[0]))
@@ -21,11 +22,17 @@
 
 #define LED_DATA_PIN GPIO5
 #define LED_DATA_PORT GPIOA
-#define LED_STRIP_LENGTH 10
+#define LED_STRIP_LENGTH 50
 #define BITS_PER_LED 24
 #define LED_0_HIGH_PERIOD 40
 #define LED_1_HIGH_PERIOD 80
 #define LED_BIT_PERIOD 200
+
+typedef struct Color {
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
+} Color;
 
 typedef struct WS2812Pixel {
 	uint32_t encoded_color;
@@ -45,6 +52,7 @@ static void tim_setup(void);
 void setup_ws2812_strip(WS2812Strip *);
 void display_strip(void);
 uint32_t get_bit_value(WS2812Strip *strip);
+Color hue_to_rgb(float);
 
 
 WS2812Strip *Tim2_strip =  (WS2812Strip *)0;
@@ -175,44 +183,80 @@ void setup_ws2812_strip(WS2812Strip *strip) {
 	tim_setup();
 }
 
+float fmodf(float a, float b) {
+	float div = a / b;
+	float remainder = a - ((int) div * b);
+	return remainder;
+}
+
+//float fabsf(float a) {
+//	if (a < 0){
+//		return a * -1.;
+//	}
+//	return a;
+//}
+
+Color hue_to_rgb(float hue){
+	hue = fmodf(hue, 360.);
+	float saturation = 1.;
+	float lightness = .5;
+	float C = (1. - fabsf(2. * lightness - 1.)) * saturation;
+	float X = C * (1. - fabsf((float)fmodf((hue / 60.), 2.) - 1.));
+	float m = lightness - C / 2.;
+	Color c;
+	if (hue >= 0 && hue < 60) {
+		c.red = (int)((C + m) * 255);
+		c.green = (int)((X + m) * 255);
+		c.blue = 0;
+	} else if (hue >= 60 && hue < 120) {
+		c.red = (int)((X + m) * 255);
+		c.green = (int)((C + m) * 255);
+		c.blue = 0;
+	} else if (hue >= 120 && hue < 180) {
+		c.red = 0;
+		c.green = (int)((C + m) * 255);
+		c.blue = (int)((X + m) * 255);
+	} else if (hue >= 180 && hue < 240) {
+		c.red = 0;
+		c.green = (int)((X + m) * 255);
+		c.blue = (int)((C + m) * 255);
+	} else if (hue >= 240 && hue < 300) {
+		c.red  = (int)((X + m) * 255);
+		c.green = 0;
+		c.blue = (int)((C + m) * 255);
+	} else if (hue >= 300 && hue < 360){
+		c.red = (int)((C + m) * 255);
+		c.green = 0;
+		c.blue = (int)((X + m) * 255);
+	}
+	return c;
+}
 
 int main(void)
 {
 	clock_setup();
 	gpio_setup();
 	WS2812Strip strip;
-	WS2812Pixel pixel = {init_pixel_col(255, 0, 0), 0};
-	strip.buffer[0] = pixel;
-	pixel.encoded_color = init_pixel_col(170, 85, 0);
-	strip.buffer[1] = pixel;
-	pixel.encoded_color = init_pixel_col(85, 170, 0);
-	strip.buffer[2] = pixel;
-	pixel.encoded_color = init_pixel_col(0, 255, 0);
-	strip.buffer[3] = pixel;
-	pixel.encoded_color = init_pixel_col(0, 170, 85);
-	strip.buffer[4] = pixel;
-	pixel.encoded_color = init_pixel_col(0, 85, 170);
-	strip.buffer[5] = pixel;
-	pixel.encoded_color = init_pixel_col(0, 0, 255);
-	strip.buffer[6] = pixel;
-	pixel.encoded_color = init_pixel_col(85, 0, 170);
-	strip.buffer[7] = pixel;
-	pixel.encoded_color = init_pixel_col(170, 0, 85);
-	strip.buffer[8] = pixel;
-	pixel.encoded_color = init_pixel_col(255, 255, 255);
-	strip.buffer[9] = pixel;
+	float start = 0;
+	float step = 360. / 50.;
+	Color c;
+	for (int i = 0; i < LED_STRIP_LENGTH; i++){
+		c = hue_to_rgb((i + start) * step);
+		WS2812Pixel pixel = {init_pixel_col(c.red, c.green, c.blue), 0};
+		strip.buffer[i] = pixel;
+	}
 	setup_ws2812_strip(&strip);
 	
 	/* a line that shows that the controller is running */
 	while (1) {
 		display_strip();
 		gpio_toggle(GPIOC, GPIO13);
-		uint32_t tmp_col = strip.buffer[0].encoded_color;
-		for (int j = 0; j < LED_STRIP_LENGTH-1; j++) {
-			strip.buffer[j].encoded_color = strip.buffer[j+1].encoded_color;
+		start = fmodf((start + 1), 50.);
+		for (int j = 0; j < LED_STRIP_LENGTH; j++) {
+			c = hue_to_rgb((j + start) * step);
+			strip.buffer[j].encoded_color = init_pixel_col(c.red, c.green, c.blue);
 		}
-		strip.buffer[LED_STRIP_LENGTH-1].encoded_color = tmp_col;
-		for (int i = 0; i < 10000000; i++) {
+		for (int k = 0; k < 10000000; k++) {
 			__asm__("nop");
 		}
 	}
