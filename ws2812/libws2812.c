@@ -1,5 +1,22 @@
 #include "libws2812.h"
-static void tim_setup(void)
+
+extern WS2812Strip *Tim2_strip;
+
+float fmodf(float a, float b) {
+	float div = a / b;
+	float remainder = a - ((int) div * b);
+	return remainder;
+}
+
+static inline void _ws2812_pin_setup(void)
+{
+	/* Set up the pins for the Channel 1 of the timer */
+	rcc_periph_clock_enable(RCC_GPIOA);
+	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO5);
+	gpio_set_af(GPIOA, GPIO_AF1, GPIO5);
+}
+
+static inline void _ws2812_timer_setup(void)
 {
 	/* Enable TIM2 clock. */
 	rcc_periph_clock_enable(RCC_TIM2);
@@ -51,6 +68,26 @@ static void tim_setup(void)
 	timer_enable_irq(TIM2, TIM_DIER_UIE);
 }
 
+static uint32_t get_bit_value(WS2812Strip *strip) {
+		if (strip->current_pixel->current_bit == BITS_PER_LED) {
+			strip->current_pixel->current_bit = 0;
+			++strip->current_pixel;
+		}
+		if (strip->current_pixel == strip->end_of_strip) {
+			strip->current_pixel = &Tim2_strip->buffer[0];
+			return 0;
+		}
+		uint32_t bit_value = (strip->current_pixel->encoded_color >>
+				(23 - strip->current_pixel->current_bit)) & 0x01;
+		++strip->current_pixel->current_bit;
+		// assuming the pixel and bit are valid set the register accordingly
+		if (bit_value == 1) {
+			return LED_1_HIGH_PERIOD;
+		} else {
+			return LED_0_HIGH_PERIOD;
+		}
+}
+
 void tim2_isr(void)
 {
 	if (timer_get_flag(TIM2, TIM_SR_UIF)) {
@@ -77,31 +114,48 @@ void setup_ws2812_strip(WS2812Strip *strip) {
 	strip->current_pixel = &strip->buffer[0];
 	strip->end_of_strip = &strip->buffer[LED_STRIP_LENGTH];
 	Tim2_strip = strip;
-	tim_setup();
-}
-
-uint32_t get_bit_value(WS2812Strip *strip) {
-		if (strip->current_pixel->current_bit == BITS_PER_LED) {
-			strip->current_pixel->current_bit = 0;
-			++strip->current_pixel;
-		}
-		if (strip->current_pixel == strip->end_of_strip) {
-			strip->current_pixel = &Tim2_strip->buffer[0];
-			return 0;
-		}
-		uint32_t bit_value = (strip->current_pixel->encoded_color >>
-				(23 - strip->current_pixel->current_bit)) & 0x01;
-		++strip->current_pixel->current_bit;
-		// assuming the pixel and bit are valid set the register accordingly
-		if (bit_value == 1) {
-			return LED_1_HIGH_PERIOD;
-		} else {
-			return LED_0_HIGH_PERIOD;
-		}
+	_ws2812_timer_setup();
+	_ws2812_pin_setup();
 }
 
 uint32_t init_pixel_col(uint8_t r, uint8_t g, uint8_t b) {
 	return ((uint32_t)g << 16) |
 		   ((uint32_t)r << 8 ) |
 		    (uint32_t) b;
+}
+
+Color hue_to_rgb(float hue){
+	hue = fmodf(hue, 360.);
+	float saturation = 1.;
+	float lightness = .5;
+	float C = (1. - fabsf(2. * lightness - 1.)) * saturation;
+	float X = C * (1. - fabsf((float)fmodf((hue / 60.), 2.) - 1.));
+	float m = lightness - C / 2.;
+	Color c;
+	if (hue >= 0 && hue < 60) {
+		c.red = (int)((C + m) * 255);
+		c.green = (int)((X + m) * 255);
+		c.blue = 0;
+	} else if (hue >= 60 && hue < 120) {
+		c.red = (int)((X + m) * 255);
+		c.green = (int)((C + m) * 255);
+		c.blue = 0;
+	} else if (hue >= 120 && hue < 180) {
+		c.red = 0;
+		c.green = (int)((C + m) * 255);
+		c.blue = (int)((X + m) * 255);
+	} else if (hue >= 180 && hue < 240) {
+		c.red = 0;
+		c.green = (int)((X + m) * 255);
+		c.blue = (int)((C + m) * 255);
+	} else if (hue >= 240 && hue < 300) {
+		c.red  = (int)((X + m) * 255);
+		c.green = 0;
+		c.blue = (int)((C + m) * 255);
+	} else if (hue >= 300 && hue < 360){
+		c.red = (int)((C + m) * 255);
+		c.green = 0;
+		c.blue = (int)((X + m) * 255);
+	}
+	return c;
 }

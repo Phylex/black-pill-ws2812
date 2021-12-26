@@ -9,7 +9,7 @@
 
 #define LED_DATA_PIN GPIO5
 #define LED_DATA_PORT GPIOA
-#define LED_STRIP_LENGTH 96
+#define LED_STRIP_LENGTH 100
 #define BITS_PER_LED 24
 #define LED_0_HIGH_PERIOD 40
 #define LED_1_HIGH_PERIOD 80
@@ -33,10 +33,7 @@ typedef struct WS2812Strip {
 } WS2812Strip;
 
 uint32_t init_pixel_col(uint8_t, uint8_t, uint8_t);
-static void gpio_setup(void);
-static void tim_setup(void);
 void setup_ws2812_strip(WS2812Strip *);
 void display_strip(void);
-uint32_t get_bit_value(WS2812Strip *strip);
 Color hue_to_rgb(float);
 #endif

@@ -34,11 +34,53 @@
       "-I../libopencm3/include",
       "-c",
       "-o",
-      "bin/blink-test.o",
-      "blink-test.c"
+      "bin/ws2812.o",
+      "ws2812.c"
     ],
-    "directory": "/home/nabla/Programming/black-pill/black-pill-blink/blink-test",
-    "file": "/home/nabla/Programming/black-pill/black-pill-blink/blink-test/blink-test.c",
-    "output": "/home/nabla/Programming/black-pill/black-pill-blink/blink-test/bin/blink-test.o"
+    "directory": "/home/nabla/Programming/black-pill/ws2812/ws2812",
+    "file": "/home/nabla/Programming/black-pill/ws2812/ws2812/ws2812.c",
+    "output": "/home/nabla/Programming/black-pill/ws2812/ws2812/bin/ws2812.o"
+  },
+  {
+    "arguments": [
+      "/bin/arm-none-eabi-gcc",
+      "-Os",
+      "-std=c99",
+      "-ggdb3",
+      "-mcpu=cortex-m4",
+      "-mthumb",
+      "-mfloat-abi=hard",
+      "-mfpu=fpv4-sp-d16",
+      "-fno-common",
+      "-ffunction-sections",
+      "-fdata-sections",
+      "-Wextra",
+      "-Wshadow",
+      "-Wno-unused-variable",
+      "-Wimplicit-function-declaration",
+      "-Wredundant-decls",
+      "-Wstrict-prototypes",
+      "-Wmissing-prototypes",
+      "-Wall",
+      "-Wundef",
+      "-I.",
+      "-I../common",
+      "-I.",
+      "-I../libopencm3/include",
+      "-I.",
+      "-I../common",
+      "-I.",
+      "-I../libopencm3/include",
+      "-DSTM32F4",
+      "-DSTM32F411CEU6",
+      "-I../libopencm3/include",
+      "-c",
+      "-o",
+      "bin/libws2812.o",
+      "libws2812.c"
+    ],
+    "directory": "/home/nabla/Programming/black-pill/ws2812/ws2812",
+    "file": "/home/nabla/Programming/black-pill/ws2812/ws2812/libws2812.c",
+    "output": "/home/nabla/Programming/black-pill/ws2812/ws2812/bin/libws2812.o"
   }
 ]

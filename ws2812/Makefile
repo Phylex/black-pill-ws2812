@@ -3,10 +3,10 @@ BUILD_DIR = bin
 
 SHARED_DIR = ../common
 CFILES = ws2812.c
-CFILES += api.c
-AFILES += api-asm.S
+CFILES += libws2812.c
+#AFILES += 
 
-# TODO - you will need to edit these two lines!
+# specify the device for the linkerscript generator
 DEVICE=stm32f411CEU6
 # OOCD_FILE = target/stm32f4x
 
