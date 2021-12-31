@@ -4,7 +4,7 @@ BUILD_DIR = bin
 SHARED_DIR = ../common
 CFILES = ws2812.c
 CFILES += libws2812.c
-#AFILES += 
+AFILES +=
 
 # specify the device for the linkerscript generator
 DEVICE=stm32f411CEU6
